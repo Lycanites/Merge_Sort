@@ -2,6 +2,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+int llenarArray(int *arr, int tamaño)
+{
+    for (int i = 0; i < tamaño; i++)
+    {
+        printf("Ingrese el elemento %d: ", i + 1);
+        scanf("%d", &arr[i]);
+    }
+    return 0;
+}
+
 int merge(int *arr, int *mid, int *fin)
 {
     int leftSize = mid - arr;
@@ -73,16 +83,42 @@ int imprimir(int *inicio, int *final)
 
 int main()
 {
-    int arr[] = {38, 27, 43, 3, 9, 82, 10};
+    int arr[10];
     int *inicio = arr;
-    int *final = arr + sizeof(arr) / sizeof(*arr);
+    int *final = arr + 10;
+    int opc;
 
-    printf("Array original:\n");
-    imprimir(inicio, final);
+    while (1)
+    {
+        printf("\nSeleccione una opción:\n");
+        printf("1. Llenar el array\n");
+        printf("2. Ordenar el array\n");
+        printf("3. Imprimir el array\n");
+        printf("4. Salir\n");
 
-    mergeSort(inicio, final);
-    printf("Array ordenado:\n");
-    imprimir(inicio, final);
+        scanf("%d \n", &opc);
 
-    return 0;
+        switch (opc)
+        {
+        case 1:
+            llenarArray(arr, 10);
+            break;
+
+        case 2:
+            mergeSort(inicio, final);
+            printf("Array ordenado\n");
+            break;
+
+        case 3:
+            imprimir(inicio, final);
+            break;
+
+        case 4:
+            printf("Saliendo...\n");
+            return 0;
+
+        default:
+            printf("Opción inválida\n");
+        }
+    }
 }
