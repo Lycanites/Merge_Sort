@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Merge Sort C Sync</title>
+  <style>
+    :root {
+      --bg-1: #07111f;
+      --bg-2: #10253d;
+      --panel: rgba(10, 18, 32, 0.72);
+      --text: #eaf2ff;
+      --muted: #9cb0cc;
+      --accent: #5ce1e6;
+      --line: rgba(255, 255, 255, 0.12);
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--text);
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(92, 225, 230, 0.18), transparent 34%),
+        radial-gradient(circle at top right, rgba(255, 183, 3, 0.14), transparent 28%),
+        linear-gradient(160deg, var(--bg-1), var(--bg-2));
+    }
+
+    .app {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .controls {
+      padding: 14px;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(5, 10, 20, 0.6);
+      color: var(--text);
+      font: inherit;
+    }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(5, 10, 20, 0.35);
+      margin-top: 20px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .toggle input { accent-color: var(--accent); }
+
+    button {
+      margin-top: 20px;
+      border: 0;
+      border-radius: 12px;
+      padding: 11px 14px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      color: #07111f;
+      background: linear-gradient(135deg, var(--accent), #a5f3fc);
+    }
+
+    .main {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .viz {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .bars {
+      min-height: 520px;
+      display: flex;
+      align-items: end;
+      gap: 2px;
+      overflow: hidden;
+      padding: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      background: rgba(5, 10, 20, 0.35);
+    }
+
+    .bar {
+      flex: 1 1 0;
+      min-width: 0;
+      border-radius: 8px 8px 3px 3px;
+      position: relative;
+      display: flex;
+      align-items: end;
+      justify-content: center;
+      font-size: 0.72rem;
+      color: rgba(8, 18, 30, 0.95);
+      font-weight: 700;
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(92, 225, 230, 0.95), rgba(10, 188, 181, 0.55));
+    }
+
+    .bar.negative { background: linear-gradient(180deg, rgba(255, 124, 124, 0.96), rgba(197, 64, 64, 0.72)); }
+    .bar.zero { background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(157, 175, 198, 0.6)); }
+    .bar.compare { background: linear-gradient(180deg, rgba(255, 210, 115, 0.99), rgba(255, 146, 43, 0.92)) !important; }
+    .bar.write { background: linear-gradient(180deg, rgba(102, 255, 178, 0.95), rgba(30, 196, 123, 0.7)); }
+
+    .bar span {
+      position: relative;
+      z-index: 1;
+      padding-bottom: 4px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      font-size: 0.9rem;
+    }
+
+    .metric {
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(5, 10, 20, 0.35);
+    }
+
+    .metric strong { display: block; font-size: 1.1rem; }
+
+    .console {
+      padding: 12px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .console-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .console-head .title {
+      color: var(--muted);
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .console-head button {
+      margin-top: 0;
+      padding: 9px 12px;
+    }
+
+    .console pre {
+      margin: 0;
+      min-height: 620px;
+      max-height: 620px;
+      overflow: auto;
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 12px;
+      padding: 10px;
+      color: #d6f5ff;
+      font-family: Consolas, "Cascadia Code", monospace;
+      font-size: 0.78rem;
+      line-height: 1.3;
+      white-space: pre-wrap;
+    }
+
+    @media (max-width: 1080px) {
+      .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .main { grid-template-columns: 1fr; }
+      .console pre { min-height: 300px; max-height: 300px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel controls">
+      <div class="field">
+        <label for="countInput">Cantidad</label>
+        <input id="countInput" type="number" min="1" step="1" value="32" />
+      </div>
+      <div class="field">
+        <label for="rangeInput">Rango</label>
+        <input id="rangeInput" type="number" min="1" step="1" value="32" />
+      </div>
+      <div class="field">
+        <label for="speedInput">Velocidad (ms)</label>
+        <input id="speedInput" type="number" min="0.000001" step="any" value="1" />
+      </div>
+      <div class="field">
+        <label>Sonido</label>
+        <label class="toggle" for="soundToggle">
+          <span>Activo</span>
+          <input id="soundToggle" type="checkbox" checked />
+        </label>
+      </div>
+      <div class="field">
+        <label>Ordenar</label>
+        <button id="runButton" type="button">Iniciar merge sort</button>
+      </div>
+    </section>
+
+    <section class="main">
+      <section class="panel viz">
+        <div class="status" id="status">Listo</div>
+        <div class="metrics">
+          <div class="metric">Comparaciones<strong id="comparisons">0</strong></div>
+          <div class="metric">Escrituras<strong id="writes">0</strong></div>
+          <div class="metric">Tiempo algoritmo<strong id="elapsed">0.000000 s</strong></div>
+          <div class="metric">Datos<strong id="dataCount">32</strong></div>
+        </div>
+        <div class="bars" id="bars"></div>
+      </section>
+
+      <section class="panel console">
+        <div class="console-head">
+          <div class="title">Consola</div>
+          <button id="clearConsoleButton" type="button">Limpiar consola</button>
+        </div>
+        <pre id="consoleOutput"></pre>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const countInput = document.getElementById('countInput');
+    const rangeInput = document.getElementById('rangeInput');
+    const speedInput = document.getElementById('speedInput');
+    const soundToggle = document.getElementById('soundToggle');
+    const runButton = document.getElementById('runButton');
+    const clearConsoleButton = document.getElementById('clearConsoleButton');
+    const statusEl = document.getElementById('status');
+    const comparisonsEl = document.getElementById('comparisons');
+    const writesEl = document.getElementById('writes');
+    const elapsedEl = document.getElementById('elapsed');
+    const dataCountEl = document.getElementById('dataCount');
+    const barsEl = document.getElementById('bars');
+    const consoleOutput = document.getElementById('consoleOutput');
+
+    let values = [];
+    let comparisons = 0;
+    let writes = 0;
+    let isSorting = false;
+    let stopRequested = false;
+    let consoleLocked = false;
+    let audioContext = null;
+    const MAX_CONSOLE_LINES = 3000;
+    let consoleLines = [];
+    let restartToken = 0;
+
+    function parsePositiveInt(value, fallback) {
+      const n = Number(value);
+      if (!Number.isFinite(n) || n <= 0) {
+        return fallback;
+      }
+      return Math.floor(n);
+    }
+
+    function parsePositiveFloat(value, fallback) {
+      const n = Number(value);
+      if (!Number.isFinite(n) || n <= 0) {
+        return fallback;
+      }
+      return n;
+    }
+
+    function logLine(line) {
+      if (consoleLocked) {
+        return;
+      }
+      consoleLines.push(line);
+      if (consoleLines.length > MAX_CONSOLE_LINES) {
+        consoleLines = consoleLines.slice(consoleLines.length - MAX_CONSOLE_LINES);
+      }
+      consoleOutput.textContent = `${consoleLines.join('\n')}\n`;
+      consoleOutput.scrollTop = consoleOutput.scrollHeight;
+    }
+
+    function clearConsole() {
+      consoleLines = [];
+      consoleOutput.textContent = '';
+    }
+
+    function setStatus(text) {
+      statusEl.textContent = text;
+    }
+
+    function ensureAudio() {
+      if (!audioContext) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) {
+          return null;
+        }
+        audioContext = new AudioContextClass();
+      }
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+      return audioContext;
+    }
+
+    function playTone(value, minValue, maxValue, intensity = 0.06) {
+      if (!soundToggle.checked) {
+        return;
+      }
+      const context = ensureAudio();
+      if (!context) {
+        return;
+      }
+      const span = Math.max(1, maxValue - minValue);
+      const normalized = (value - minValue) / span;
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.frequency.value = 180 + normalized * 820;
+      gain.gain.value = Math.max(0.012, intensity);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start();
+      gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.08);
+      oscillator.stop(context.currentTime + 0.09);
+    }
+
+    function sleep(ms) {
+      if (ms <= 0) {
+        return Promise.resolve();
+      }
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function renderBars(highlight = {}) {
+      barsEl.innerHTML = '';
+      const count = values.length;
+      const gap = count > 800 ? 0 : count > 300 ? 1 : 2;
+      barsEl.style.gap = `${gap}px`;
+
+      const width = barsEl.clientWidth || 1;
+      const slotWidth = (width - (Math.max(0, count - 1) * gap)) / Math.max(1, count);
+      const showLabel = slotWidth >= 28;
+
+      const maxAbs = Math.max(1, ...values.map(v => Math.abs(v)));
+      for (let i = 0; i < values.length; i++) {
+        const value = values[i];
+        const bar = document.createElement('div');
+        const normalized = Math.abs(value) / maxAbs;
+        const compressed = Math.pow(normalized, 1.18);
+        const height = 10 + compressed * 78;
+        bar.className = 'bar';
+        if (value < 0) bar.classList.add('negative');
+        if (value === 0) bar.classList.add('zero');
+        if (highlight.compare?.has(i)) bar.classList.add('compare');
+        if (highlight.write?.has(i)) bar.classList.add('write');
+        bar.style.height = `${Math.max(10, Math.min(88, height))}%`;
+        bar.title = `Indice ${i}: ${value}`;
+
+        const text = document.createElement('span');
+        text.textContent = showLabel ? String(value) : '';
+        bar.appendChild(text);
+        barsEl.appendChild(bar);
+      }
+    }
+
+    function updateMetrics() {
+      comparisonsEl.textContent = String(comparisons);
+      writesEl.textContent = String(writes);
+      dataCountEl.textContent = String(values.length);
+    }
+
+    function generateValues(expectedToken = restartToken) {
+      if (expectedToken !== restartToken) {
+        return;
+      }
+      const count = parsePositiveInt(countInput.value, 32);
+      const range = parsePositiveInt(rangeInput.value, count);
+      countInput.value = String(count);
+      rangeInput.value = String(range);
+
+      values = Array.from({ length: count }, () => Math.floor(Math.random() * (range * 2 + 1)) - range);
+      comparisons = 0;
+      writes = 0;
+      elapsedEl.textContent = '0.000000 s';
+      consoleLocked = false;
+      clearConsole();
+      logLine(`ARGUMENTOS: cantidad=${count} rango=${range}`);
+      logLine('INICIANDO generacion de datos');
+      for (let i = 0; i < values.length; i++) {
+        logLine(`GENERADO[${i}] = ${values[i]}`);
+      }
+      updateMetrics();
+      renderBars();
+      setStatus('Datos generados');
+    }
+
+    function restartScene() {
+      restartToken += 1;
+      const currentToken = restartToken;
+      if (isSorting) {
+        stopRequested = true;
+        consoleLocked = true;
+      }
+      clearConsole();
+      setStatus('Reiniciando...');
+      window.setTimeout(() => {
+        if (currentToken !== restartToken) {
+          return;
+        }
+        generateValues(currentToken);
+      }, 0);
+    }
+
+    function mergeSortBenchmark(arr, start, end) {
+      if (end - start <= 1) {
+        return arr.slice(start, end);
+      }
+      const mid = start + Math.floor((end - start) / 2);
+      const left = mergeSortBenchmark(arr, start, mid);
+      const right = mergeSortBenchmark(arr, mid, end);
+      const merged = [];
+      let li = 0;
+      let ri = 0;
+
+      while (li < left.length && ri < right.length) {
+        if (left[li] <= right[ri]) {
+          merged.push(left[li++]);
+        } else {
+          merged.push(right[ri++]);
+        }
+      }
+      while (li < left.length) merged.push(left[li++]);
+      while (ri < right.length) merged.push(right[ri++]);
+      return merged;
+    }
+
+    async function mergeSortAnimated(arr, start, end, minValue, maxValue, delay) {
+      if (stopRequested) {
+        throw new Error('STOP');
+      }
+      if (end - start <= 1) {
+        return arr.slice(start, end);
+      }
+
+      const mid = start + Math.floor((end - start) / 2);
+      logLine(`DIVIDIENDO [${start}..${mid - 1}] y [${mid}..${end - 1}]`);
+      const left = await mergeSortAnimated(arr, start, mid, minValue, maxValue, delay);
+      const right = await mergeSortAnimated(arr, mid, end, minValue, maxValue, delay);
+      const merged = [];
+      let li = 0;
+      let ri = 0;
+
+      logLine(`MEZCLANDO [${start}..${mid - 1}] con [${mid}..${end - 1}]`);
+
+      while (li < left.length && ri < right.length) {
+        if (stopRequested) {
+          throw new Error('STOP');
+        }
+        const lv = left[li];
+        const rv = right[ri];
+        comparisons += 1;
+        updateMetrics();
+        logLine(`COMPARANDO ${lv} y ${rv}`);
+        renderBars({ compare: new Set([start + li, mid + ri]) });
+        playTone(Math.max(lv, rv), minValue, maxValue, 0.07);
+        await sleep(delay);
+
+        if (lv <= rv) {
+          merged.push(lv);
+          li += 1;
+        } else {
+          merged.push(rv);
+          ri += 1;
+        }
+      }
+
+      while (li < left.length) merged.push(left[li++]);
+      while (ri < right.length) merged.push(right[ri++]);
+
+      for (let i = 0; i < merged.length; i++) {
+        if (stopRequested) {
+          throw new Error('STOP');
+        }
+        arr[start + i] = merged[i];
+        values[start + i] = merged[i];
+        writes += 1;
+        updateMetrics();
+        logLine(`ESCRIBIENDO[${start + i}] = ${merged[i]}`);
+        renderBars({ write: new Set([start + i]) });
+        playTone(merged[i], minValue, maxValue, 0.06);
+        await sleep(delay);
+      }
+
+      return merged;
+    }
+
+    async function runSort() {
+      if (isSorting) {
+        stopRequested = true;
+        setStatus('Deteniendo');
+        return;
+      }
+
+      const delay = parsePositiveFloat(speedInput.value, 1);
+      speedInput.value = String(delay);
+      const range = parsePositiveInt(rangeInput.value, 32);
+      const minValue = -range;
+      const maxValue = range;
+
+      comparisons = 0;
+      writes = 0;
+      elapsedEl.textContent = '0.000000 s';
+      updateMetrics();
+      clearConsole();
+      logLine(`ARGUMENTOS: cantidad=${values.length} rango=${range}`);
+      logLine('INICIANDO merge sort');
+      for (let i = 0; i < values.length; i++) {
+        logLine(`GENERADO[${i}] = ${values[i]}`);
+      }
+
+      isSorting = true;
+      stopRequested = false;
+      runButton.textContent = 'Detener';
+      setStatus('Ordenando');
+
+      const benchmarkInput = values.slice();
+      const t0 = performance.now();
+      mergeSortBenchmark(benchmarkInput, 0, benchmarkInput.length);
+      const algorithmTime = (performance.now() - t0) / 1000;
+
+      try {
+        const working = values.slice();
+        await mergeSortAnimated(working, 0, working.length, minValue, maxValue, delay);
+        values = working;
+        renderBars();
+        logLine('MERGE SORT TERMINADO');
+        logLine(`ARREGLO: ${values.join(' ')}`);
+        logLine(`COMPARACIONES: ${comparisons}`);
+        logLine(`ESCRITURAS: ${writes}`);
+        logLine(`TIEMPO_SEGUNDOS: ${algorithmTime.toFixed(6)}`);
+        elapsedEl.textContent = `${algorithmTime.toFixed(6)} s`;
+        setStatus(`Orden terminado ${algorithmTime.toFixed(6)} s`);
+      } catch (error) {
+        if (error instanceof Error && error.message === 'STOP') {
+          setStatus('Ordenamiento detenido');
+        } else {
+          setStatus('Error');
+          throw error;
+        }
+      } finally {
+        isSorting = false;
+        stopRequested = false;
+        consoleLocked = false;
+        runButton.textContent = 'Iniciar merge sort';
+      }
+    }
+
+    countInput.addEventListener('change', restartScene);
+    countInput.addEventListener('keydown', event => {
+      if (event.key === 'Enter') {
+        clearConsole();
+        restartScene();
+      }
+    });
+    rangeInput.addEventListener('change', restartScene);
+    rangeInput.addEventListener('keydown', event => {
+      if (event.key === 'Enter') {
+        clearConsole();
+        restartScene();
+      }
+    });
+    speedInput.addEventListener('change', () => {
+      const delay = parsePositiveFloat(speedInput.value, 1);
+      speedInput.value = String(delay);
+    });
+
+    runButton.addEventListener('click', runSort);
+    clearConsoleButton.addEventListener('click', clearConsole);
+
+    generateValues();
+  </script>
+</body>
+</html>

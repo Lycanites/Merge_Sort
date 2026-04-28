@@ -3,215 +3,180 @@
 #include <string.h>
 #include <time.h>
 
-int llenarArrayManual(double *arr, int size)
+static int comparisons = 0;
+static int writes = 0;
+
+int parse_positive_int(const char *text, int *out)
 {
+    char *end = NULL;
+    long value = strtol(text, &end, 10);
+    if (end == text || *end != '\0' || value <= 0 || value > 2000000000L)
+    {
+        return 0;
+    }
+    *out = (int)value;
+    return 1;
+}
+
+void generate_random_array(int *arr, int size, int range)
+{
+    int bound = range * 2 + 1;
+    printf("INICIANDO generacion de datos\n");
     for (int i = 0; i < size; i++)
     {
-        printf("Ingrese el elemento %d: ", i + 1);
-        if (scanf("%lf", &arr[i]) != 1)
+        arr[i] = (rand() % bound) - range;
+        printf("GENERADO[%d] = %d\n", i, arr[i]);
+    }
+}
+
+void print_array(const int *arr, int size)
+{
+    printf("ARREGLO: ");
+    for (int i = 0; i < size; i++)
+    {
+        printf("%d", arr[i]);
+        if (i < size - 1)
         {
-            fprintf(stderr, "Error al leer el elemento %d\n", i + 1);
-            i--;
-            while (getchar() != '\n')
-                ;
+            printf(" ");
         }
     }
-    return 0;
+    printf("\n");
 }
 
-int llenarArrayAuto(double *arr, int size)
+int merge(int *arr, int *mid, int *end, int *base)
 {
-    srand(time(NULL));
-    for (int i = 0; i < size; i++)
+    int left_size = (int)(mid - arr);
+    int right_size = (int)(end - mid);
+    int left_start = (int)(arr - base);
+    int left_end = left_start + left_size - 1;
+    int right_start = (int)(mid - base);
+    int right_end = right_start + right_size - 1;
+    int *left = (int *)malloc((size_t)left_size * sizeof(int));
+    int *right = (int *)malloc((size_t)right_size * sizeof(int));
+
+    if (left == NULL || right == NULL)
     {
-        // Genera doubles aleatorios entre -100000.0 y 100000.0
-        arr[i] = ((double)rand() / RAND_MAX) * 200000.0 - 100000.0;
-    }
-    printf("Array llenado automaticamente con %d numeros aleatorios.\n", size);
-    return 0;
-}
-
-int merge(double *arr, double *mid, double *fin)
-{
-    int leftSize = mid - arr;
-    int rightSize = fin - mid;
-
-    double *left = (double *)malloc(leftSize * sizeof(double));
-    double *right = (double *)malloc(rightSize * sizeof(double));
-
-    if (!left || !right)
-    {
-        fprintf(stderr, "Error de memoria en merge\n");
         free(left);
         free(right);
-        return -1;
+        return 0;
     }
 
-    memcpy(left, arr, leftSize * sizeof(double));
-    memcpy(right, mid, rightSize * sizeof(double));
+    memcpy(left, arr, (size_t)left_size * sizeof(int));
+    memcpy(right, mid, (size_t)right_size * sizeof(int));
 
-    double *l = left, *r = right, *f = arr;
+    printf("MEZCLANDO [%d..%d] con [%d..%d]\n", left_start, left_end, right_start, right_end);
 
-    while (l < left + leftSize && r < right + rightSize)
+    int *l = left;
+    int *r = right;
+    int *w = arr;
+
+    while (l < left + left_size && r < right + right_size)
     {
+        comparisons++;
+        printf("COMPARANDO %d y %d\n", *l, *r);
         if (*l <= *r)
-            *f++ = *l++;
+        {
+            *w = *l;
+            l++;
+        }
         else
-            *f++ = *r++;
+        {
+            *w = *r;
+            r++;
+        }
+        writes++;
+        printf("ESCRIBIENDO[%d] = %d\n", (int)(w - base), *w);
+        w++;
     }
 
-    while (l < left + leftSize)
-        *f++ = *l++;
+    while (l < left + left_size)
+    {
+        *w = *l;
+        writes++;
+        printf("ESCRIBIENDO[%d] = %d\n", (int)(w - base), *w);
+        l++;
+        w++;
+    }
 
-    while (r < right + rightSize)
-        *f++ = *r++;
+    while (r < right + right_size)
+    {
+        *w = *r;
+        writes++;
+        printf("ESCRIBIENDO[%d] = %d\n", (int)(w - base), *w);
+        r++;
+        w++;
+    }
 
     free(left);
     free(right);
+    return 1;
+}
+
+int merge_sort(int *start, int *end, int *base)
+{
+    if (end - start <= 1)
+    {
+        printf("CASO BASE en indice %d\n", (int)(start - base));
+        return 1;
+    }
+
+    int *mid = start + (end - start) / 2;
+    printf("DIVIDIENDO [%d..%d] y [%d..%d]\n", (int)(start - base), (int)(mid - base) - 1, (int)(mid - base), (int)(end - base) - 1);
+    if (!merge_sort(start, mid, base))
+    {
+        return 0;
+    }
+    if (!merge_sort(mid, end, base))
+    {
+        return 0;
+    }
+    return merge(start, mid, end, base);
+}
+
+int main(int argc, char **argv)
+{
+    int size = 0;
+    int range = 0;
+
+    if (argc != 3)
+    {
+        printf("USO: %s <cantidad> <rango>\n", argv[0]);
+        return 1;
+    }
+
+    if (!parse_positive_int(argv[1], &size) || !parse_positive_int(argv[2], &range))
+    {
+        printf("ERROR: cantidad y rango deben ser enteros positivos.\n");
+        return 1;
+    }
+
+    int *arr = (int *)malloc((size_t)size * sizeof(int));
+    if (arr == NULL)
+    {
+        printf("ERROR: no se pudo reservar memoria para %d elementos.\n", size);
+        return 1;
+    }
+
+    srand((unsigned int)time(NULL));
+    printf("ARGUMENTOS: cantidad=%d rango=%d\n", size, range);
+    generate_random_array(arr, size, range);
+
+    printf("INICIANDO merge sort\n");
+    clock_t start = clock();
+    if (!merge_sort(arr, arr + size, arr))
+    {
+        printf("ERROR: fallo en merge sort por memoria insuficiente.\n");
+        free(arr);
+        return 1;
+    }
+    clock_t end = clock();
+
+    printf("MERGE SORT TERMINADO\n");
+    print_array(arr, size);
+    printf("COMPARACIONES: %d\n", comparisons);
+    printf("ESCRITURAS: %d\n", writes);
+    printf("TIEMPO_SEGUNDOS: %.6f\n", (double)(end - start) / CLOCKS_PER_SEC);
+
+    free(arr);
     return 0;
-}
-
-int mergeSort(double *inicio, double *final)
-{
-    if (final - inicio <= 1)
-        return 0;
-
-    double *mid = inicio + (final - inicio) / 2;
-
-    mergeSort(inicio, mid);
-    mergeSort(mid, final);
-    merge(inicio, mid, final);
-    return 0;
-}
-
-void imprimir(double *inicio, double *final)
-{
-    int idx = 1;
-    for (double *p = inicio; p < final; p++, idx++)
-        printf("[%d] %.6f\n", idx, *p);
-}
-
-// Submenú reutilizable para pedir tamaño y reservar memoria
-// Retorna el nuevo tamaño, o 0 si hubo error
-int pedirTamanioYAllocar(double **arr)
-{
-    int n;
-    printf("Ingrese el tamanio del array: ");
-    if (scanf("%d", &n) != 1 || n <= 0)
-    {
-        printf("Entrada invalida. Por favor, ingrese un numero entero positivo.\n");
-        while (getchar() != '\n')
-            ;
-        return 0;
-    }
-    while (getchar() != '\n')
-        ;
-
-    free(*arr);
-    *arr = (double *)malloc(n * sizeof(double));
-    if (!*arr)
-    {
-        printf("Error de memoria\n");
-        return 0;
-    }
-    return n;
-}
-
-int main()
-{
-    int n = 0;
-    double *arr = NULL;
-    int opc, subOpc;
-
-    while (1)
-    {
-        printf("\n===== MENU =====\n");
-        printf("1. Llenar el array\n");
-        printf("2. Ordenar el array\n");
-        printf("3. Imprimir el array\n");
-        printf("4. Salir\n");
-        printf("Opcion: ");
-
-        if (scanf("%d", &opc) != 1)
-        {
-            printf("Entrada invalida.\n");
-            while (getchar() != '\n')
-                ;
-            continue;
-        }
-        while (getchar() != '\n')
-            ;
-
-        switch (opc)
-        {
-        case 1:
-            printf("\n--- Llenar Array ---\n");
-            printf("  1. Ingresar numeros manualmente\n");
-            printf("  2. Generar numeros automaticamente\n");
-            printf("  Opcion: ");
-
-            if (scanf("%d", &subOpc) != 1)
-            {
-                printf("Entrada invalida.\n");
-                while (getchar() != '\n')
-                    ;
-                break;
-            }
-            while (getchar() != '\n')
-                ;
-
-            if (subOpc == 1)
-            {
-                n = pedirTamanioYAllocar(&arr);
-                if (n > 0)
-                {
-                    llenarArrayManual(arr, n);
-                    printf("Array llenado manualmente con %d elementos (double).\n", n);
-                }
-            }
-            else if (subOpc == 2)
-            {
-                n = pedirTamanioYAllocar(&arr);
-                if (n > 0)
-                    llenarArrayAuto(arr, n);
-            }
-            else
-            {
-                printf("Opcion invalida.\n");
-            }
-            break;
-
-        case 2:
-            if (!arr || n <= 0)
-            {
-                printf("Primero llene el array (opcion 1).\n");
-                break;
-            }
-
-            clock_t start = clock();
-            mergeSort(arr, arr + n);
-            clock_t end = clock();
-
-            double tiempo = ((double)(end - start)) / CLOCKS_PER_SEC;
-            printf("Array ordenado en %.6f segundos.\n", tiempo);
-            break;
-
-        case 3:
-            if (!arr || n <= 0)
-            {
-                printf("Primero llene el array (opcion 1).\n");
-                break;
-            }
-            imprimir(arr, arr + n);
-            break;
-
-        case 4:
-            printf("Saliendo...\n");
-            free(arr);
-            return 0;
-
-        default:
-            printf("Opcion invalida. Intente de nuevo.\n");
-        }
-    }
 }
